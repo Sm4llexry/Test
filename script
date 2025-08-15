@@ -1,0 +1,418 @@
+-- Part 1/6 - SM4LLFRY HUB GUI Setup
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+local guiAnimationEnabled = true
+local espColor = Color3.fromRGB(85, 255, 85)
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "SM4LLFRY_HUB"
+
+-- Toggle Button 🍟
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Image = "rbxassetid://4483345998"
+toggleButton.Size = UDim2.new(0, 50, 0, 50)
+toggleButton.Position = UDim2.new(0, 20, 0.3, 0)
+toggleButton.BackgroundTransparency = 1
+toggleButton.Parent = ScreenGui
+toggleButton.Active = true
+
+-- Make toggle button draggable
+local function makeDraggable(gui)
+	local dragging, dragInput, dragStart, startPos
+	gui.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = gui.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+	gui.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+makeDraggable(toggleButton)
+
+-- Main GUI Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = ScreenGui
+Instance.new("UICorner", mainFrame)
+
+-- Make GUI draggable
+makeDraggable(mainFrame)
+-- Part 2/6 - Tab System + GUI Animation
+
+-- Animation: Fade + Slide-In
+local function showGUI()
+	if guiAnimationEnabled then
+		mainFrame.Position = UDim2.new(0.5, -200, 1, 0)
+		mainFrame.Visible = true
+		mainFrame.BackgroundTransparency = 1
+
+		TweenService:Create(mainFrame, TweenInfo.new(0.5), {
+			Position = UDim2.new(0.5, -200, 0.5, -150),
+			BackgroundTransparency = 0
+		}):Play()
+	else
+		mainFrame.Visible = true
+	end
+end
+
+local function hideGUI()
+	mainFrame.Visible = false
+end
+
+toggleButton.MouseButton1Click:Connect(function()
+	if mainFrame.Visible then
+		hideGUI()
+	else
+		showGUI()
+	end
+end)
+
+-- Title above tabs
+local hubTitle = Instance.new("TextLabel")
+hubTitle.Text = "SM4LLFRY HUB"
+hubTitle.Size = UDim2.new(1, 0, 0, 30)
+hubTitle.Position = UDim2.new(0, 0, 0, 0)
+hubTitle.Font = Enum.Font.GothamBold
+hubTitle.TextSize = 18
+hubTitle.TextColor3 = Color3.new(1, 1, 1)
+hubTitle.BackgroundTransparency = 1
+hubTitle.Parent = mainFrame
+
+-- Tab button container
+local tabButtons = Instance.new("Frame")
+tabButtons.Size = UDim2.new(0, 100, 1, -30)
+tabButtons.Position = UDim2.new(0, 0, 0, 30)
+tabButtons.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+tabButtons.Parent = mainFrame
+Instance.new("UICorner", tabButtons)
+
+-- Tab pages holder
+local pages = {}
+local function createPage(name)
+	local page = Instance.new("Frame")
+	page.Name = name
+	page.Size = UDim2.new(1, -100, 1, -30)
+	page.Position = UDim2.new(0, 100, 0, 30)
+	page.BackgroundTransparency = 1
+	page.Visible = false
+	page.Parent = mainFrame
+	pages[name] = page
+	return page
+end
+
+local mainPage = createPage("Main")
+local discordPage = createPage("Discord")
+local settingsPage = createPage("Settings")
+
+-- Tab switching
+local function showPage(name)
+	for n, p in pairs(pages) do
+		p.Visible = (n == name)
+	end
+end
+
+-- Tab button creation
+local tabYOffset = 0
+local function createTab(name)
+	local tab = Instance.new("TextButton")
+	tab.Size = UDim2.new(1, 0, 0, 40)
+	tab.Position = UDim2.new(0, 0, 0, tabYOffset)
+	tabYOffset = tabYOffset + 40
+	tab.Text = name
+	tab.Font = Enum.Font.GothamBold
+	tab.TextSize = 14
+	tab.TextColor3 = Color3.new(1, 1, 1)
+	tab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	tab.Parent = tabButtons
+	Instance.new("UICorner", tab)
+
+	tab.MouseButton1Click:Connect(function()
+		showPage(name)
+	end)
+end
+
+createTab("Main")
+createTab("Discord")
+createTab("Settings")
+
+showPage("Discord")
+-- Part 3/6 - Main Tab Features (ESP, Jump, Speed)
+
+-- Utility: Button Creator
+local function createButton(text, parent, posY, callback)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, 180, 0, 40)
+	button.Position = UDim2.new(0, 20, 0, posY)
+	button.Text = text
+	button.Font = Enum.Font.GothamBold
+	button.TextSize = 14
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+	button.Parent = parent
+	Instance.new("UICorner", button)
+	button.MouseButton1Click:Connect(callback)
+end
+
+-- ESP toggle
+local espEnabled = false
+local espFolder = Instance.new("Folder", game.CoreGui)
+espFolder.Name = "PlayerESP"
+
+local function highlightPlayers()
+	espFolder:ClearAllChildren()
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = player.Character.HumanoidRootPart
+			local box = Instance.new("BoxHandleAdornment")
+			box.Adornee = hrp
+			box.Size = hrp.Size + Vector3.new(0.2, 0.2, 0.2)
+			box.AlwaysOnTop = true
+			box.ZIndex = 5
+			box.Color3 = espColor
+			box.Transparency = 0.3
+			box.Parent = espFolder
+		end
+	end
+end
+
+createButton("Toggle ESP", mainPage, 20, function()
+	espEnabled = not espEnabled
+	espFolder:ClearAllChildren()
+	if espEnabled then highlightPlayers() end
+end)
+
+-- Infinite Jump
+local infJumpEnabled = false
+createButton("Toggle Infinite Jump", mainPage, 120, function()
+	infJumpEnabled = not infJumpEnabled
+end)
+
+UserInputService.JumpRequest:Connect(function()
+	if infJumpEnabled and LocalPlayer.Character then
+		LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+-- Speed Boost
+local speedBoostEnabled = false
+local normalSpeed = 16
+local boostedSpeed = 50
+
+createButton("Toggle Speed Boost", mainPage, 170, function()
+	speedBoostEnabled = not speedBoostEnabled
+	local human = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if human then
+		human.WalkSpeed = speedBoostEnabled and boostedSpeed or normalSpeed
+	end
+end)
+-- Part 4/6 - Discord Tab + Fixed NPC ESP
+
+-- Discord Tab Button
+createButton("Copy Discord Link", discordPage, 20, function()
+	setclipboard("https://discord.gg/YOUR_INVITE_HERE") -- Replace this link
+end)
+
+-- NPC ESP (Fixed Version)
+local npcEspEnabled = false
+local npcEspFolder = Instance.new("Folder", game.CoreGui)
+npcEspFolder.Name = "NPC_ESP"
+
+local function isNPC(model)
+	if model:IsA("Model") and model:FindFirstChildOfClass("Humanoid") then
+		if not Players:GetPlayerFromCharacter(model) then
+			return true
+		end
+	end
+	return false
+end
+
+local function getRootPart(model)
+	return model:FindFirstChild("HumanoidRootPart")
+		or model:FindFirstChild("Torso")
+		or model:FindFirstChild("UpperTorso")
+end
+
+local function highlightNPCs()
+	npcEspFolder:ClearAllChildren()
+
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if isNPC(obj) then
+			local part = getRootPart(obj)
+			if part then
+				local box = Instance.new("BoxHandleAdornment")
+				box.Adornee = part
+				box.Size = part.Size + Vector3.new(0.5, 0.5, 0.5)
+				box.AlwaysOnTop = true
+				box.ZIndex = 5
+				box.Color3 = Color3.fromRGB(255, 220, 100)
+				box.Transparency = 0.4
+				box.Name = "NPCBox"
+				box.Parent = npcEspFolder
+			end
+		end
+	end
+end
+
+createButton("Toggle NPC ESP", mainPage, 220, function()
+	npcEspEnabled = not npcEspEnabled
+	npcEspFolder:ClearAllChildren()
+	if npcEspEnabled then
+		highlightNPCs()
+	end
+end)
+-- Part 5/6 – Settings Tab + Anti-Ban Toggle
+
+-- Toggle GUI Animation On/Off
+createButton("Toggle GUI Animation", settingsPage, 20, function()
+	guiAnimationEnabled = not guiAnimationEnabled
+end)
+
+-- Toggle ESP Color (Green ↔ Red)
+createButton("Toggle ESP Color", settingsPage, 70, function()
+	if espColor == Color3.fromRGB(85, 255, 85) then
+		espColor = Color3.fromRGB(255, 85, 85)
+	else
+		espColor = Color3.fromRGB(85, 255, 85)
+	end
+	if espEnabled then highlightPlayers() end
+end)
+
+-- Reset GUI Position
+createButton("Reset GUI Position", settingsPage, 120, function()
+	mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+end)
+
+-- Theme Toggle
+local isDarkTheme = true
+createButton("Toggle Theme (Light/Dark)", settingsPage, 170, function()
+	isDarkTheme = not isDarkTheme
+	if isDarkTheme then
+		mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+		tabButtons.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	else
+		mainFrame.BackgroundColor3 = Color3.fromRGB(220, 220, 220)
+		tabButtons.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+	end
+end)
+
+-- 🛡️ Anti-Ban Toggle + Dropdown
+local antiBanEnabled = false
+local antiBanLevel = "Admin"
+
+createButton("Toggle Anti-Ban", settingsPage, 220, function()
+	antiBanEnabled = not antiBanEnabled
+	if antiBanEnabled then
+		-- Anti-Kick
+		local mt = getrawmetatable(game)
+		setreadonly(mt, false)
+		local oldNamecall = mt.__namecall
+		mt.__namecall = newcclosure(function(self, ...)
+			local method = getnamecallmethod()
+			if method == "Kick" then return end
+			return oldNamecall(self, ...)
+		end)
+
+		-- Anti-Studio Detection
+		if antiBanLevel == "Studio" then
+			local function disableTracking()
+				for _, obj in ipairs(getgc(true)) do
+					if typeof(obj) == "function" and islclosure(obj) then
+						local info = debug.getinfo(obj)
+						if info.name == "StudioAnalytics" or info.source:lower():find("track") then
+							hookfunction(obj, function(...) return nil end)
+						end
+					end
+				end
+			end
+			pcall(disableTracking)
+		end
+
+		-- Anti-Remote Detection (basic)
+		if antiBanLevel == "Mod" or antiBanLevel == "Admin" then
+			for _, v in ipairs(getconnections(game.DescendantAdded)) do
+				pcall(function()
+					if v.Function and tostring(v.Function):lower():find("log") then
+						v:Disable()
+					end
+				end)
+			end
+		end
+	end
+end)
+
+-- Anti-Ban Level Dropdown
+local levelLabel = Instance.new("TextLabel")
+levelLabel.Text = "Anti-Ban Level:"
+levelLabel.TextColor3 = Color3.new(1, 1, 1)
+levelLabel.Font = Enum.Font.Gotham
+levelLabel.TextSize = 14
+levelLabel.Size = UDim2.new(0, 150, 0, 20)
+levelLabel.Position = UDim2.new(0, 20, 0, 270)
+levelLabel.BackgroundTransparency = 1
+levelLabel.Parent = settingsPage
+
+local levelDropdown = Instance.new("TextButton")
+levelDropdown.Size = UDim2.new(0, 150, 0, 30)
+levelDropdown.Position = UDim2.new(0, 20, 0, 295)
+levelDropdown.Text = "Admin"
+levelDropdown.Font = Enum.Font.GothamBold
+levelDropdown.TextSize = 14
+levelDropdown.TextColor3 = Color3.new(1, 1, 1)
+levelDropdown.BackgroundColor3 = Color3.fromRGB(85, 85, 85)
+levelDropdown.Parent = settingsPage
+Instance.new("UICorner", levelDropdown)
+
+local options = {"Admin", "Mod", "Studio"}
+local optionIndex = 1
+
+levelDropdown.MouseButton1Click:Connect(function()
+	optionIndex = optionIndex + 1
+	if optionIndex > #options then optionIndex = 1 end
+	antiBanLevel = options[optionIndex]
+	levelDropdown.Text = antiBanLevel
+end)
+-- Part 6/6 - Load Message + Final Setup
+
+-- Message after script fully loads
+local message = Instance.new("TextLabel")
+message.Size = UDim2.new(0.6, 0, 0, 40)
+message.Position = UDim2.new(0.2, 0, 0.85, 0)
+message.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+message.Text = "✅ SM4LLFRY HUB Loaded Successfully"
+message.TextColor3 = Color3.new(1, 1, 1)
+message.Font = Enum.Font.GothamBold
+message.TextSize = 16
+message.Visible = true
+message.Parent = ScreenGui
+Instance.new("UICorner", message)
+
+task.delay(3, function()
+	message:Destroy()
+end)
+
+-- Default to show Main tab
+showPage("Discord")
