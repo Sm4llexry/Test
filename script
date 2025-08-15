@@ -233,7 +233,7 @@ end)
 
 -- Discord Tab Button
 createButton("Copy Discord Link", discordPage, 20, function()
-	setclipboard("https://discord.gg/YOUR_INVITE_HERE") -- Replace this link
+	setclipboard("https://discord.gg/NaHSnJjm") -- Replace this link
 end)
 
 -- NPC ESP (Fixed Version)
