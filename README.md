@@ -1,3 +1,3 @@
 This is just a test script made by a newbie lol
 
-Creator: Sm4llexry ( Sm4llfry )
+Creator: Sm4llexry
