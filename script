@@ -303,7 +303,7 @@ end)
 
 -- Reset GUI Position
 createButton("Reset GUI Position", settingsPage, 120, function()
-	mainFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+	mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
 end)
 
 -- Theme Toggle
