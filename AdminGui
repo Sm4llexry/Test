@@ -1,0 +1,12 @@
+local AdminGui = Instance.new("ScreenGui", StarterGui)
+local AdminsIds = {
+ 123456789, --Replace this
+--Add more if you want
+}
+
+local mainFrame = Instance.new("Frame", AdminGui)
+mainFrame.Position = UDim2.new (0.5, 0.5)
+mainFrame.Color = Vector3.new(200, 200, 200)
+mainFrame.Size = 
+local button = Instace.new("TextButton", mainFrame)
+button.Position = UDim2.new(0.5, 0.5)
